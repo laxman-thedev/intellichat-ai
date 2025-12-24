@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 import { useState } from "react";
+import './assets/prism.css'
 
 import Sidebar from "./components/Sidebar";
 import ChatBox from "./components/ChatBox";
