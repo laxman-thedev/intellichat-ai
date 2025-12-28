@@ -1,5 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import toast from "react-hot-toast";
+
+import { useAppContext } from "../context/AppContext";
 
 type AuthState = "login" | "register";
 
@@ -9,9 +12,38 @@ const Login = () => {
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
 
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    const { axios, setToken } = useAppContext();
+
+    const handleSubmit = async (
+        e: FormEvent<HTMLFormElement>
+    ): Promise<void> => {
         e.preventDefault();
-        // auth logic later
+
+        const url =
+            state === "login"
+                ? "/api/user/login"
+                : "/api/user/register";
+
+        try {
+            const { data } = await axios.post(url, {
+                name,
+                email,
+                password,
+            });
+
+            if (data.success) {
+                setToken(data.token);
+                localStorage.setItem("token", data.token);
+            } else {
+                toast.error(data.message || "Authentication failed");
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Something went wrong");
+            }
+        }
     };
 
     return (
