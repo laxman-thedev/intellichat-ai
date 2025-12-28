@@ -1,8 +1,9 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
-import { dummyPublishedImages } from "../assets/assets";
 import Loading from "./Loading";
+import { useAppContext } from "../context/AppContext";
 
 import type { IPublishedImage } from "../types/chat.types";
 
@@ -10,9 +11,26 @@ const Community = () => {
   const [images, setImages] = useState<IPublishedImage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const fetchImages = async () => {
-    setImages(dummyPublishedImages);
-    setLoading(false);
+  const { axios } = useAppContext();
+
+  const fetchImages = async (): Promise<void> => {
+    try {
+      const { data } = await axios.get("/api/user/community-images");
+
+      if (data.success) {
+        setImages(data.images as IPublishedImage[]);
+      } else {
+        toast.error(data.message || "Failed to fetch images");
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to fetch images");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -40,7 +58,7 @@ const Community = () => {
               <img
                 src={item.imageUrl}
                 alt="generated"
-                className="w-full h-10 md:h-50 2xl:h-62 object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
+                className="w-full h-40 md:h-50 2xl:h-62 object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
               />
               <p className="absolute bottom-0 right-0 text-xs bg-black/50 backdrop-blur text-white px-4 py-1 rounded-tl-xl opacity-0 group-hover:opacity-100 transition duration-300">
                 Created by {item.userName}
@@ -50,7 +68,7 @@ const Community = () => {
         </div>
       ) : (
         <p className="text-center text-gray-600 dark:text-purple-200 mt-10">
-          No images Available.
+          No images available.
         </p>
       )}
     </div>
