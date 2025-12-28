@@ -11,7 +11,7 @@ export interface IMessage {
 }
 
 export interface IChat {
-    _id: string | number;
+    _id: string;
     userId: string;
     userName?: string;
     name: string;
