@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 import User from "../models/User.js";
+import Chat from "../models/Chat.js";
 
 /* ------------------ TYPES ------------------ */
 
@@ -108,6 +109,42 @@ export const getUserData = async (
         return res.status(500).json({
             success: false,
             message: "Server Error",
+        });
+    }
+};
+
+// API to get published images
+export const getPublishedImages = async (
+    req: Request,
+    res: Response
+): Promise<Response> => {
+    try {
+        const publishedImageMessages = await Chat.aggregate([
+            { $unwind: "$messages" },
+            {
+                $match: {
+                    "messages.isImage": true,
+                    "messages.isPublished": true,
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    imageUrl: "$messages.content",
+                    userName: "$userName",
+                },
+            },
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            images: publishedImageMessages.reverse(),
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message,
         });
     }
 };
