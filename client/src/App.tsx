@@ -1,5 +1,6 @@
 import { Route, Routes, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { Toaster } from "react-hot-toast";
 
 import "./assets/prism.css";
 
@@ -16,14 +17,15 @@ import { useAppContext } from "./context/AppContext";
 const App = () => {
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const { pathname } = useLocation();
-  const { user } = useAppContext();
+  const { user, loadingUser } = useAppContext();
 
-  if (pathname === "/loading") {
+  if (pathname === "/loading" || loadingUser) {
     return <Loading />;
   }
 
   return (
     <>
+      <Toaster />
       {!isMenuOpen && user && (
         <img
           src={assets.menu_icon}
