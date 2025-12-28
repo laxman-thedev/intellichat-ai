@@ -1,10 +1,11 @@
 import { useState } from "react";
 import moment from "moment";
+import toast from "react-hot-toast";
 
 import { assets } from "../assets/assets";
 import { useAppContext } from "../context/AppContext";
 
-import type { FC, Dispatch, SetStateAction } from "react";
+import type { FC, Dispatch, SetStateAction, MouseEvent } from "react";
 import type { IChat } from "../types/chat.types";
 
 /* ------------------ PROPS ------------------ */
@@ -17,9 +18,72 @@ interface SidebarProps {
 /* ------------------ COMPONENT ------------------ */
 
 const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
-    const { chats, setSelectedChat, theme, setTheme, user, navigate } = useAppContext();
+    const {
+        chats,
+        setSelectedChat,
+        theme,
+        setTheme,
+        user,
+        navigate,
+        createNewChat,
+        axios,
+        setChats,
+        fetchUsersChats,
+        setToken,
+        token,
+    } = useAppContext();
 
     const [search, setSearch] = useState<string>("");
+
+    /* ------------------ LOGOUT ------------------ */
+
+    const logout = (): void => {
+        localStorage.removeItem("token");
+        setToken("");
+        toast.success("Logged out successfully");
+    };
+
+    /* ------------------ DELETE CHAT ------------------ */
+
+    const deleteChat = async (
+        e: MouseEvent<HTMLImageElement>,
+        chatId: string
+    ): Promise<void> => {
+        try {
+            e.stopPropagation();
+
+            const confirmDelete = window.confirm(
+                "Are you sure you want to delete this chat?"
+            );
+            if (!confirmDelete) return;
+
+            const { data } = await axios.post(
+                `/api/chat/delete/${chatId}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (data.success) {
+                const newChats = chats.filter((chat) => chat._id !== chatId);
+                setChats(newChats);
+                await fetchUsersChats();
+                toast.success("Chat deleted successfully");
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to delete chat");
+            }
+        }
+
+    };
 
     /* ------------------ FILTERED CHATS ------------------ */
 
@@ -45,8 +109,11 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 className="w-full max-w-48"
             />
 
-            {/* New chat */}
-            <button className="flex justify-center items-center w-full py-2 mt-10 text-white bg-linear-to-r from-[#A456F7] to-[#3D81F6] text-sm rounded-md cursor-pointer">
+            {/* New Chat */}
+            <button
+                onClick={createNewChat}
+                className="flex justify-center items-center w-full py-2 mt-10 text-white bg-linear-to-r from-[#A456F7] to-[#3D81F6] text-sm rounded-md cursor-pointer"
+            >
                 <span className="mr-2 text-xl">+</span> New Chat
             </button>
 
@@ -92,7 +159,15 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                                 {moment(chat.updatedAt).fromNow()}
                             </p>
                         </div>
+
                         <img
+                            onClick={(e) =>
+                                toast.promise(deleteChat(e, chat._id), {
+                                    loading: "Deleting chat...",
+                                    success: "Chat deleted",
+                                    error: "Failed to delete chat",
+                                })
+                            }
                             src={assets.bin_icon}
                             className="hidden group-hover:block w-4 cursor-pointer not-dark:invert"
                             alt="delete"
@@ -138,7 +213,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 </div>
             </div>
 
-            {/* Dark Mode Toggle */}
+            {/* Dark Mode */}
             <div className="flex items-center justify-between gap-2 p-3 mt-4 border border-gray-300 dark:border-white/15 rounded-md">
                 <div className="flex items-center gap-2 text-sm">
                     <img
@@ -158,15 +233,10 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                             setTheme(theme === "dark" ? "light" : "dark")
                         }
                     />
-
-                    {/* Track */}
-                    <div className="w-9 h-5 bg-gray-400 rounded-full peer-checked:bg-purple-600 transition-all"></div>
-
-                    {/* Thumb */}
-                    <span className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4"></span>
+                    <div className="w-9 h-5 bg-gray-400 rounded-full peer-checked:bg-purple-600 transition-all" />
+                    <span className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform peer-checked:translate-x-4" />
                 </label>
             </div>
-
 
             {/* User */}
             <div className="flex items-center gap-3 p-3 mt-4 border border-gray-300 dark:border-white/15 rounded-md cursor-pointer group">
@@ -176,6 +246,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 </p>
                 {user && (
                     <img
+                        onClick={logout}
                         src={assets.logout_icon}
                         className="h-5 hidden group-hover:block cursor-pointer not-dark:invert"
                         alt="logout"
