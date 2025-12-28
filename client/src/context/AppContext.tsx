@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-refresh/only-export-components */
-/* eslint-disable react-hooks/set-state-in-effect */
+
 import {
     createContext,
     useContext,
@@ -11,9 +12,15 @@ import type { ReactNode } from "react";
 import type { NavigateFunction } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
-import { dummyUserData, dummyChats } from "../assets/assets";
+import axios from "axios";
+import toast from "react-hot-toast";
+
 import type { IUser, IChat } from "../types/chat.types";
 import type { AppContextType } from "../types/app-context.types";
+
+/* ------------------ AXIOS CONFIG ------------------ */
+
+axios.defaults.baseURL = import.meta.env.VITE_SERVER_URL;
 
 /* ------------------ CONTEXT ------------------ */
 
@@ -35,19 +42,96 @@ export const AppContextProvider = ({
     const [user, setUser] = useState<IUser | null>(null);
     const [chats, setChats] = useState<IChat[]>([]);
     const [selectedChat, setSelectedChat] = useState<IChat | null>(null);
+
     const [theme, setTheme] = useState<string>(
         localStorage.getItem("theme") || "light"
     );
 
+    const [token, setToken] = useState<string>(
+        localStorage.getItem("token") || ""
+    );
+
+    const [loadingUser, setLoadingUser] = useState<boolean>(true);
+
     /* ------------------ ACTIONS ------------------ */
 
     const fetchUser = async (): Promise<void> => {
-        setUser(dummyUserData);
+        try {
+            const { data } = await axios.get("/api/user/data", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (data.success) {
+                setUser(data.user);
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to fetch user");
+            }
+        } finally {
+            setLoadingUser(false);
+        }
+    };
+
+    const createNewChat = async (): Promise<void> => {
+        try {
+            if (!user) {
+                toast("Login to create a new chat");
+                return;
+            }
+
+            navigate("/");
+
+            await axios.get("/api/chat/create", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            await fetchUsersChats();
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to create chat");
+            }
+        }
     };
 
     const fetchUsersChats = async (): Promise<void> => {
-        setChats(dummyChats);
-        setSelectedChat(dummyChats[0] || null);
+        try {
+            const { data } = await axios.get("/api/chat/get", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (data.success) {
+                setChats(data.chats);
+
+                // If no chats exist, create one
+                if (data.chats.length === 0) {
+                    await createNewChat();
+                    return fetchUsersChats();
+                } else {
+                    setSelectedChat(data.chats[0]);
+                }
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to fetch chats");
+            }
+        }
     };
 
     /* ------------------ EFFECTS ------------------ */
@@ -67,8 +151,13 @@ export const AppContextProvider = ({
     }, [user]);
 
     useEffect(() => {
-        fetchUser();
-    }, []);
+        if (token) {
+            fetchUser();
+        } else {
+            setUser(null);
+            setLoadingUser(false);
+        }
+    }, [token]);
 
     /* ------------------ CONTEXT VALUE ------------------ */
 
@@ -83,6 +172,12 @@ export const AppContextProvider = ({
         setTheme,
         navigate,
         fetchUser,
+        createNewChat,
+        loadingUser,
+        fetchUsersChats,
+        token,
+        setToken,
+        axios,
     };
 
     return (
