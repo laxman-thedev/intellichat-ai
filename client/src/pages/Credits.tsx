@@ -1,8 +1,9 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
-import { dummyPlans } from "../assets/assets";
 import Loading from "./Loading";
+import { useAppContext } from "../context/AppContext";
 
 import type { IPlan } from "../types/chat.types";
 
@@ -10,9 +11,56 @@ const Credits = () => {
     const [plans, setPlans] = useState<IPlan[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
-    const fetchPlans = async () => {
-        setPlans(dummyPlans);
-        setLoading(false);
+    const { token, axios } = useAppContext();
+
+    const fetchPlans = async (): Promise<void> => {
+        try {
+            const { data } = await axios.get("/api/credit/plan", {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (data.success) {
+                setPlans(data.plans as IPlan[]);
+            } else {
+                toast.error(data.message || "Failed to fetch plans");
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to fetch plans");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const purchasePlan = async (planId: string): Promise<void> => {
+        try {
+            const { data } = await axios.post(
+                "/api/credit/purchase",
+                { planId },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (data.success) {
+                window.location.href = data.url as string;
+            } else {
+                toast.error(data.message);
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to purchase plan");
+            }
+        }
     };
 
     useEffect(() => {
@@ -31,10 +79,11 @@ const Credits = () => {
                 {plans.map((plan) => (
                     <div
                         key={plan._id}
-                        className={`border border-gray-200 dark:border-purple-700 rounded-lg shadow hover:shadow-lg transition-shadow p-6 min-w-75 flex flex-col ${plan._id === "pro"
+                        className={`border border-gray-200 dark:border-purple-700 rounded-lg shadow hover:shadow-lg transition-shadow p-6 min-w-75 flex flex-col ${
+                            plan._id === "pro"
                                 ? "bg-purple-50 dark:bg-purple-900"
                                 : "bg-white dark:bg-transparent"
-                            }`}
+                        }`}
                     >
                         <div className="flex-1">
                             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -56,7 +105,16 @@ const Credits = () => {
                             </ul>
                         </div>
 
-                        <button className="mt-6 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-medium py-2 rounded transition-colors cursor-pointer">
+                        <button
+                            onClick={() =>
+                                toast.promise(purchasePlan(plan._id), {
+                                    loading: "Purchasing plan...",
+                                    success: "Plan purchased",
+                                    error: "Failed to purchase plan",
+                                })
+                            }
+                            className="mt-6 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-medium py-2 rounded transition-colors cursor-pointer"
+                        >
                             Buy Now
                         </button>
                     </div>
