@@ -15,7 +15,7 @@ const Community = () => {
 
   const fetchImages = async (): Promise<void> => {
     try {
-      const { data } = await axios.get("/api/user/community-images");
+      const { data } = await axios.get("/api/user/published-images");
 
       if (data.success) {
         setImages(data.images as IPublishedImage[]);
