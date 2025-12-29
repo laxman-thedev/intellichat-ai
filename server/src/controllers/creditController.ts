@@ -78,7 +78,7 @@ export const purchasePlan = async (
         const plan = plans.find((p) => p._id === planId);
         if (!plan) {
             return res
-                .status(404)
+                .status(200)
                 .json({ success: false, message: "Plan not found" });
         }
 
