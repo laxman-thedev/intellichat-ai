@@ -61,7 +61,7 @@ export const deleteChat = async (
 
         if (!chatId) {
             return res
-                .status(400)
+                .status(200)
                 .json({ success: false, message: "Chat ID required" });
         }
 

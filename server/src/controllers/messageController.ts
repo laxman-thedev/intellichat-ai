@@ -18,7 +18,7 @@ export const textMessageController = async (
 
         if (user.credits < 1) {
             return res
-                .status(403)
+                .status(200)
                 .json({ success: false, message: "Insufficient credits" });
         }
 
@@ -30,7 +30,7 @@ export const textMessageController = async (
         const chat = await Chat.findOne({ _id: chatId, userId });
         if (!chat) {
             return res
-                .status(404)
+                .status(200)
                 .json({ success: false, message: "Chat not found" });
         }
 
@@ -86,7 +86,7 @@ export const imageMessageController = async (
 
         if (user.credits < 2) {
             return res
-                .status(403)
+                .status(200)
                 .json({ success: false, message: "Insufficient credits" });
         }
 
@@ -99,7 +99,7 @@ export const imageMessageController = async (
         const chat = await Chat.findOne({ _id: chatId, userId });
         if (!chat) {
             return res
-                .status(404)
+                .status(200)
                 .json({ success: false, message: "Chat not found" });
         }
 

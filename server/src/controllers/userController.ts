@@ -44,7 +44,7 @@ export const registerUser = async (
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res
-                .status(400)
+                .status(200)
                 .json({ success: false, message: "User already exists" });
         }
 
@@ -83,7 +83,7 @@ export const loginUser = async (
             }
         }
 
-        return res.status(400).json({
+        return res.status(200).json({
             success: false,
             message: "Invalid email or password",
         });
