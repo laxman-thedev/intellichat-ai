@@ -11,15 +11,11 @@ const Community = () => {
   const [images, setImages] = useState<IPublishedImage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const { axios, token } = useAppContext();
+  const { axios } = useAppContext();
 
   const fetchImages = async (): Promise<void> => {
     try {
-      const { data } = await axios.get("/api/user/published-images", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { data } = await axios.get("/api/user/published-images");
 
       if (data.success) {
         setImages(data.images as IPublishedImage[]);
