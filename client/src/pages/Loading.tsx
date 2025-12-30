@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const Loading = () => {
   const navigate = useNavigate();
@@ -10,10 +11,13 @@ const Loading = () => {
     const timeout = setTimeout(async () => {
       try {
         await fetchUser();
+        toast.success("Payment successful 🎉 Credits added!");
+      } catch {
+        toast.error("Payment processed, but failed to refresh data");
       } finally {
         navigate("/");
       }
-    }, 8000);
+    }, 2000); // ⬅ reduce from 8000ms (UX improvement)
 
     return () => clearTimeout(timeout);
   }, [fetchUser, navigate]);
