@@ -1,23 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+/* Import Google Font used across the app */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
+
+/* Import Tailwind CSS base styles */
 @import "tailwindcss";
 
+/* Custom dark mode variant for Tailwind */
 @custom-variant dark (&:where(.dark, .dark *));
 
-*{
+/* Apply global font */
+* {
   font-family: "Outfit", sans-serif;
 }
 
+/* Define theme-level CSS variables */
 @theme {
   --color-primary: "#E6CCFf";
 }
-::-webkit-scrollbar{
+
+/* Hide scrollbar for cleaner UI */
+::-webkit-scrollbar {
   display: none;
 }
 
+/* Reset Tailwind styles for markdown content
+   (used when rendering AI responses with code blocks) */
 .reset-tw :not(pre):not(code) {
   all: revert;
 }
 
+/* Loader animation delays for typing indicator */
 .loader div:nth-child(2) {
   animation-delay: 0.2s;
 }

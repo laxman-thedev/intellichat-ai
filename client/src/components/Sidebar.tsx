@@ -10,6 +10,9 @@ import type { IChat } from "../types/chat.types";
 
 /* ------------------ PROPS ------------------ */
 
+/**
+ * Sidebar component props
+ */
 interface SidebarProps {
     isMenuOpen: boolean;
     setIsMenuOpen: Dispatch<SetStateAction<boolean>>;
@@ -17,7 +20,20 @@ interface SidebarProps {
 
 /* ------------------ COMPONENT ------------------ */
 
+/**
+ * Sidebar
+ * -------
+ * Handles:
+ * - Chat list
+ * - Chat deletion
+ * - Navigation
+ * - Theme toggle
+ * - Logout
+ */
 const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
+    /**
+     * Global context values
+     */
     const {
         chats,
         setSelectedChat,
@@ -33,10 +49,16 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
         token,
     } = useAppContext();
 
+    /**
+     * Search input state
+     */
     const [search, setSearch] = useState<string>("");
 
     /* ------------------ LOGOUT ------------------ */
 
+    /**
+     * Clears auth token and logs out user
+     */
     const logout = (): void => {
         localStorage.removeItem("token");
         setToken("");
@@ -45,6 +67,12 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
 
     /* ------------------ DELETE CHAT ------------------ */
 
+    /**
+     * Deletes a chat by ID
+     * - Stops event bubbling
+     * - Confirms deletion
+     * - Updates local chat state
+     */
     const deleteChat = async (
         e: MouseEvent<HTMLImageElement>,
         chatId: string
@@ -68,8 +96,13 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             );
 
             if (data.success) {
-                const newChats = chats.filter((chat) => chat._id !== chatId);
+                // Remove chat locally
+                const newChats = chats.filter(
+                    (chat) => chat._id !== chatId
+                );
                 setChats(newChats);
+
+                // Re-sync chats from backend
                 await fetchUsersChats();
             } else {
                 toast.error(data.message);
@@ -81,16 +114,23 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 toast.error("Failed to delete chat");
             }
         }
-
     };
 
     /* ------------------ FILTERED CHATS ------------------ */
 
+    /**
+     * Filter chats based on search input
+     * Matches against:
+     * - First message content
+     * - Chat name
+     */
     const filteredChats: IChat[] = chats.filter((chat) => {
         const query = search.toLowerCase();
 
         if (chat.messages[0]) {
-            return chat.messages[0].content.toLowerCase().includes(query);
+            return chat.messages[0].content
+                .toLowerCase()
+                .includes(query);
         }
 
         return chat.name.toLowerCase().includes(query);
@@ -98,8 +138,9 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
 
     return (
         <div
-            className={`flex flex-col h-screen min-w-72 p-5 dark:bg-linear-to-b from-[#242124]/30 to-[#000000]/30 border-r border-[#80609F]/30 backdrop-blur-3xl transition-all duration-500 max-md:absolute left-0 z-10 ${!isMenuOpen && "max-md:-translate-x-full"
-                }`}
+            className={`flex flex-col h-screen min-w-72 p-5 dark:bg-linear-to-b from-[#242124]/30 to-[#000000]/30 border-r border-[#80609F]/30 backdrop-blur-3xl transition-all duration-500 max-md:absolute left-0 z-10 ${
+                !isMenuOpen && "max-md:-translate-x-full"
+            }`}
         >
             {/* Logo */}
             <img
@@ -108,7 +149,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 className="w-full max-w-48"
             />
 
-            {/* New Chat */}
+            {/* Create new chat */}
             <button
                 onClick={createNewChat}
                 className="flex justify-center items-center w-full py-2 mt-10 text-white bg-linear-to-r from-[#A456F7] to-[#3D81F6] text-sm rounded-md cursor-pointer"
@@ -116,7 +157,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 <span className="mr-2 text-xl">+</span> New Chat
             </button>
 
-            {/* Search */}
+            {/* Search input */}
             <div className="flex items-center gap-2 p-3 mt-4 border border-gray-400 dark:border-white/20 rounded-md">
                 <img
                     src={assets.search_icon}
@@ -132,7 +173,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 />
             </div>
 
-            {/* Chats */}
+            {/* Chat list */}
             {filteredChats.length > 0 && (
                 <p className="mt-4 text-sm">Recent Chats</p>
             )}
@@ -159,6 +200,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                             </p>
                         </div>
 
+                        {/* Delete chat */}
                         <img
                             onClick={(e) =>
                                 toast.promise(deleteChat(e, chat._id), {
@@ -175,7 +217,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 ))}
             </div>
 
-            {/* Community */}
+            {/* Navigation links */}
             <div
                 onClick={() => {
                     navigate("/community");
@@ -191,7 +233,6 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 <p className="text-sm">Community Images</p>
             </div>
 
-            {/* Credits */}
             <div
                 onClick={() => {
                     navigate("/credits");
@@ -212,7 +253,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 </div>
             </div>
 
-            {/* Dark Mode */}
+            {/* Theme toggle */}
             <div className="flex items-center justify-between gap-2 p-3 mt-4 border border-gray-300 dark:border-white/15 rounded-md">
                 <div className="flex items-center gap-2 text-sm">
                     <img
@@ -237,9 +278,13 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 </label>
             </div>
 
-            {/* User */}
+            {/* User info */}
             <div className="flex items-center gap-3 p-3 mt-4 border border-gray-300 dark:border-white/15 rounded-md cursor-pointer group">
-                <img src={assets.user_icon} className="w-7 rounded-full" alt="user" />
+                <img
+                    src={assets.user_icon}
+                    className="w-7 rounded-full"
+                    alt="user"
+                />
                 <p className="flex-1 text-sm truncate">
                     {user ? user.name : "Login your account"}
                 </p>
@@ -253,7 +298,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 )}
             </div>
 
-            {/* Close */}
+            {/* Mobile close button */}
             <img
                 src={assets.close_icon}
                 onClick={() => setIsMenuOpen(false)}

@@ -8,20 +8,35 @@ import Message from "./Message";
 import type { IMessage } from "../types/chat.types";
 import toast from "react-hot-toast";
 
+/**
+ * Supported chat modes:
+ * - text  → normal AI text response
+ * - image → AI image generation
+ */
 type Mode = "text" | "image";
 
 const ChatBox = () => {
+    /**
+     * Reference to the chat container.
+     * Used for auto-scrolling when new messages arrive.
+     */
     const containerRef = useRef<HTMLDivElement | null>(null);
 
+    /**
+     * Global app context values
+     */
     const {
-        selectedChat,
-        theme,
-        user,
-        axios,
-        token,
-        setUser,
+        selectedChat, // currently active chat
+        theme,        // light / dark mode
+        user,         // logged-in user
+        axios,        // preconfigured axios instance
+        token,        // JWT auth token
+        setUser,      // update user state (credits)
     } = useAppContext();
 
+    /**
+     * Local state
+     */
     const [messages, setMessages] = useState<IMessage[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [prompt, setPrompt] = useState<string>("");
@@ -30,16 +45,24 @@ const ChatBox = () => {
 
     /* ------------------ SUBMIT ------------------ */
 
+    /**
+     * Handles message submission (text or image).
+     * - Sends user prompt to backend
+     * - Appends user message immediately
+     * - Updates credits after successful response
+     */
     const handleSubmit = async (
         e: FormEvent<HTMLFormElement>
     ): Promise<void> => {
         e.preventDefault();
 
+        // Ensure user is logged in
         if (!user) {
             toast("Login to continue");
             return;
         }
 
+        // Ensure a chat is selected
         if (!selectedChat) {
             toast.error("No chat selected");
             return;
@@ -51,7 +74,10 @@ const ChatBox = () => {
             const promptCopy = prompt;
             setPrompt("");
 
-            // Push user message instantly
+            /**
+             * Optimistic UI update:
+             * Push user message immediately before API response
+             */
             setMessages((prev) => [
                 ...prev,
                 {
@@ -63,6 +89,9 @@ const ChatBox = () => {
                 },
             ]);
 
+            /**
+             * Send message to backend
+             */
             const { data } = await axios.post(
                 `/api/message/${mode}`,
                 {
@@ -76,9 +105,14 @@ const ChatBox = () => {
             );
 
             if (data.success) {
+                // Append assistant reply
                 setMessages((prev) => [...prev, data.reply]);
 
-                // Update credits safely
+                /**
+                 * Update user credits locally
+                 * - text  → -1 credit
+                 * - image → -2 credits
+                 */
                 setUser((prev) => {
                     if (!prev) return prev;
                     return {
@@ -100,20 +134,25 @@ const ChatBox = () => {
                 toast.error("Something went wrong");
             }
             setPrompt(prompt);
-        }
-        finally {
+        } finally {
             setLoading(false);
         }
     };
 
     /* ------------------ EFFECTS ------------------ */
 
+    /**
+     * Sync messages when selected chat changes
+     */
     useEffect(() => {
         if (selectedChat) {
             setMessages(selectedChat.messages);
         }
     }, [selectedChat]);
 
+    /**
+     * Auto-scroll chat container to bottom on new messages
+     */
     useEffect(() => {
         if (containerRef.current) {
             containerRef.current.scrollTo({
@@ -146,12 +185,13 @@ const ChatBox = () => {
                     </div>
                 )}
 
+                {/* Render chat messages */}
                 {messages.map((message, index) => (
                     <Message key={index} message={message} />
                 ))}
             </div>
 
-            {/* Loader */}
+            {/* Loading animation */}
             {loading && (
                 <div className="loader flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-white animate-bounce"></div>
@@ -160,7 +200,7 @@ const ChatBox = () => {
                 </div>
             )}
 
-            {/* Image publish toggle */}
+            {/* Image publish toggle (only for image mode) */}
             {mode === "image" && (
                 <label className="inline-flex items-center gap-2 mb-3 text-sm mx-auto">
                     <p className="text-xs">
@@ -175,11 +215,12 @@ const ChatBox = () => {
                 </label>
             )}
 
-            {/* Input */}
+            {/* Prompt input */}
             <form
                 onSubmit={handleSubmit}
                 className="bg-primary/20 dark:bg-[#583C79]/30 border border-primary dark:border-[#80609F]/30 rounded-full w-full max-w-2xl p-3 pl-4 mx-auto flex gap-4 items-center"
             >
+                {/* Mode selector */}
                 <select
                     value={mode}
                     onChange={(e) => setMode(e.target.value as Mode)}
@@ -193,6 +234,7 @@ const ChatBox = () => {
                     </option>
                 </select>
 
+                {/* Prompt input */}
                 <input
                     type="text"
                     value={prompt}
@@ -202,6 +244,7 @@ const ChatBox = () => {
                     required
                 />
 
+                {/* Send button */}
                 <button disabled={loading}>
                     <img
                         className="w-8 cursor-pointer"
