@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
+
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -7,12 +8,25 @@ import { useAppContext } from "../context/AppContext";
 
 import type { IPublishedImage } from "../types/chat.types";
 
+/**
+ * Community Page
+ * ----------------
+ * Displays all publicly published AI-generated images
+ * shared by users across the platform.
+ */
 const Community = () => {
+  // Stores published images fetched from backend
   const [images, setImages] = useState<IPublishedImage[]>([]);
+
+  // Loading state while fetching images
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Axios instance from global app context
   const { axios } = useAppContext();
 
+  /**
+   * Fetch published community images from backend
+   */
   const fetchImages = async (): Promise<void> => {
     try {
       const { data } = await axios.get("/api/user/published-images");
@@ -33,10 +47,12 @@ const Community = () => {
     }
   };
 
+  // Fetch images once on component mount
   useEffect(() => {
     fetchImages();
   }, []);
 
+  // Show loader while fetching data
   if (loading) return <Loading />;
 
   return (
@@ -45,6 +61,7 @@ const Community = () => {
         Community Images
       </h2>
 
+      {/* Render images if available */}
       {images.length > 0 ? (
         <div className="flex flex-wrap max-sm:justify-center gap-5">
           {images.map((item, index) => (
@@ -60,6 +77,8 @@ const Community = () => {
                 alt="generated"
                 className="w-full h-40 md:h-50 2xl:h-62 object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out"
               />
+
+              {/* Creator info shown on hover */}
               <p className="absolute bottom-0 right-0 text-xs bg-black/50 backdrop-blur text-white px-4 py-1 rounded-tl-xl opacity-0 group-hover:opacity-100 transition duration-300">
                 Created by {item.userName}
               </p>
@@ -67,6 +86,7 @@ const Community = () => {
           ))}
         </div>
       ) : (
+        // Empty state
         <p className="text-center text-gray-600 dark:text-purple-200 mt-10">
           No images available.
         </p>
