@@ -20,10 +20,18 @@ import type { AppContextType } from "../types/app-context.types";
 
 /* ------------------ AXIOS CONFIG ------------------ */
 
+/**
+ * Set base URL for all axios requests.
+ * Value comes from Vite environment variables.
+ */
 axios.defaults.baseURL = import.meta.env.VITE_SERVER_URL;
 
 /* ------------------ CONTEXT ------------------ */
 
+/**
+ * Global application context.
+ * Holds user state, chats, theme, token, and shared actions.
+ */
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 /* ------------------ PROVIDER PROPS ------------------ */
@@ -34,27 +42,50 @@ interface AppContextProviderProps {
 
 /* ------------------ PROVIDER ------------------ */
 
+/**
+ * AppContextProvider
+ * ------------------
+ * Wraps the application and provides global state:
+ * - Authenticated user
+ * - Chat data
+ * - Theme (dark/light)
+ * - Auth token
+ * - Shared API actions
+ */
 export const AppContextProvider = ({
     children,
 }: AppContextProviderProps) => {
+    // React Router navigation helper
     const navigate: NavigateFunction = useNavigate();
 
+    // Logged-in user data
     const [user, setUser] = useState<IUser | null>(null);
+
+    // All chats of the user
     const [chats, setChats] = useState<IChat[]>([]);
+
+    // Currently selected chat
     const [selectedChat, setSelectedChat] = useState<IChat | null>(null);
 
+    // UI theme state (persisted in localStorage)
     const [theme, setTheme] = useState<string>(
         localStorage.getItem("theme") || "light"
     );
 
+    // JWT token (persisted in localStorage)
     const [token, setToken] = useState<string>(
         localStorage.getItem("token") || ""
     );
 
+    // Indicates whether user data is being loaded
     const [loadingUser, setLoadingUser] = useState<boolean>(true);
 
     /* ------------------ ACTIONS ------------------ */
 
+    /**
+     * Fetch logged-in user details using stored JWT token.
+     * Used on app load and after Stripe payment completion.
+     */
     const fetchUser = async (): Promise<void> => {
         try {
             const { data } = await axios.get("/api/user/data", {
@@ -79,6 +110,10 @@ export const AppContextProvider = ({
         }
     };
 
+    /**
+     * Create a new empty chat for the logged-in user.
+     * Redirects user to home page after creation.
+     */
     const createNewChat = async (): Promise<void> => {
         try {
             if (!user) {
@@ -86,6 +121,7 @@ export const AppContextProvider = ({
                 return;
             }
 
+            // Ensure user is on chat screen
             navigate("/");
 
             await axios.get("/api/chat/create", {
@@ -94,6 +130,7 @@ export const AppContextProvider = ({
                 },
             });
 
+            // Refresh chat list after creation
             await fetchUsersChats();
         } catch (error: unknown) {
             if (error instanceof Error) {
@@ -104,6 +141,10 @@ export const AppContextProvider = ({
         }
     };
 
+    /**
+     * Fetch all chats belonging to the logged-in user.
+     * Automatically selects the latest chat.
+     */
     const fetchUsersChats = async (): Promise<void> => {
         try {
             const { data } = await axios.get("/api/chat/get", {
@@ -115,7 +156,7 @@ export const AppContextProvider = ({
             if (data.success) {
                 setChats(data.chats);
 
-                // If no chats exist, create one
+                // If no chats exist, create one automatically
                 if (data.chats.length === 0) {
                     await createNewChat();
                     return fetchUsersChats();
@@ -136,11 +177,19 @@ export const AppContextProvider = ({
 
     /* ------------------ EFFECTS ------------------ */
 
+    /**
+     * Apply dark/light theme to document root
+     * and persist preference in localStorage.
+     */
     useEffect(() => {
         document.documentElement.classList.toggle("dark", theme === "dark");
         localStorage.setItem("theme", theme);
     }, [theme]);
 
+    /**
+     * Fetch chats whenever user changes.
+     * Reset chats when user logs out.
+     */
     useEffect(() => {
         if (user) {
             fetchUsersChats();
@@ -150,6 +199,10 @@ export const AppContextProvider = ({
         }
     }, [user]);
 
+    /**
+     * Fetch user data when token becomes available.
+     * Reset user state if token is removed.
+     */
     useEffect(() => {
         if (token) {
             fetchUser();
@@ -161,6 +214,9 @@ export const AppContextProvider = ({
 
     /* ------------------ CONTEXT VALUE ------------------ */
 
+    /**
+     * Values and actions exposed to the entire app
+     */
     const value: AppContextType = {
         user,
         setUser,
@@ -189,6 +245,12 @@ export const AppContextProvider = ({
 
 /* ------------------ CUSTOM HOOK ------------------ */
 
+/**
+ * useAppContext
+ * -------------
+ * Safe wrapper around useContext.
+ * Ensures hook is used inside AppContextProvider.
+ */
 export const useAppContext = (): AppContextType => {
     const context = useContext(AppContext);
 
