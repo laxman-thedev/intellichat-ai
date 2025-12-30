@@ -58,8 +58,8 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             if (!confirmDelete) return;
 
             const { data } = await axios.post(
-                `/api/chat/delete/${chatId}`,
-                {},
+                `/api/chat/delete`,
+                { chatId },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -71,7 +71,6 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 const newChats = chats.filter((chat) => chat._id !== chatId);
                 setChats(newChats);
                 await fetchUsersChats();
-                toast.success("Chat deleted successfully");
             } else {
                 toast.error(data.message);
             }
