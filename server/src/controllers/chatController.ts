@@ -3,15 +3,21 @@ import Chat from "../models/Chat.js";
 import type { AuthRequest } from "../middlewares/auth.js";
 
 /* ------------------ CREATE CHAT ------------------ */
-
+/**
+ * Creates a new empty chat for the authenticated user
+ * - Uses user data injected by auth middleware
+ * - Initializes chat with no messages
+ */
 export const createChat = async (
     req: AuthRequest,
     res: Response
 ): Promise<Response> => {
     try {
+        // Authenticated user from middleware
         const user = req.user as any;
 
-        const chat = await Chat.create({
+        // Create a new chat document
+        await Chat.create({
             userId: user._id.toString(),
             userName: user.name,
             name: "New Chat",
@@ -29,7 +35,10 @@ export const createChat = async (
 };
 
 /* ------------------ GET CHATS ------------------ */
-
+/**
+ * Fetches all chats for the authenticated user
+ * - Sorted by latest updated chat
+ */
 export const getChats = async (
     req: AuthRequest,
     res: Response
@@ -37,6 +46,7 @@ export const getChats = async (
     try {
         const user = req.user as any;
 
+        // Retrieve user's chats sorted by activity
         const chats = await Chat.find({ userId: user._id })
             .sort({ updatedAt: -1 })
             .lean();
@@ -50,7 +60,9 @@ export const getChats = async (
 };
 
 /* ------------------ DELETE CHAT ------------------ */
-
+/**
+ * Deletes a specific chat belonging to the authenticated user
+ */
 export const deleteChat = async (
     req: AuthRequest,
     res: Response
@@ -59,12 +71,14 @@ export const deleteChat = async (
         const { chatId } = req.body;
         const user = req.user as any;
 
+        // Validate request payload
         if (!chatId) {
             return res
                 .status(200)
                 .json({ success: false, message: "Chat ID required" });
         }
 
+        // Ensure chat belongs to the user before deletion
         await Chat.deleteOne({ _id: chatId, userId: user._id });
 
         return res
