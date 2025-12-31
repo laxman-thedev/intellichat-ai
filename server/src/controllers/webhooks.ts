@@ -4,11 +4,19 @@ import Transaction from "../models/Transaction.js";
 import User from "../models/User.js";
 
 /* ------------------ STRIPE INSTANCE ------------------ */
-
+/**
+ * Stripe SDK initialized with secret key
+ * Used only for webhook verification and event handling
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 /* ------------------ WEBHOOK CONTROLLER ------------------ */
-
+/**
+ * Handles Stripe webhook events
+ * - Verifies Stripe signature
+ * - Confirms successful payment
+ * - Adds credits after payment confirmation
+ */
 export const stripeWebhooks = async (
     request: Request,
     response: Response
@@ -18,6 +26,10 @@ export const stripeWebhooks = async (
     let event: Stripe.Event;
 
     /* ---------- VERIFY SIGNATURE ---------- */
+    /**
+     * Ensures the request is actually sent by Stripe
+     * Prevents spoofed webhook calls
+     */
     try {
         event = stripe.webhooks.constructEvent(
             request.body,
@@ -34,7 +46,10 @@ export const stripeWebhooks = async (
     try {
         switch (event.type) {
             case "payment_intent.succeeded": {
+                // Extract payment intent
                 const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
+                // Fetch related checkout session
                 const sessions = await stripe.checkout.sessions.list({
                     payment_intent: paymentIntent.id,
                     limit: 1,
@@ -49,11 +64,13 @@ export const stripeWebhooks = async (
                     });
                 }
 
+                // Metadata attached during checkout creation
                 const metadata = session.metadata as {
                     transactionId?: string;
                     appId?: string;
                 };
 
+                // Ignore unrelated Stripe events
                 if (metadata?.appId !== "intellichat") {
                     return response.json({
                         received: true,
@@ -61,6 +78,7 @@ export const stripeWebhooks = async (
                     });
                 }
 
+                // Find pending transaction
                 const transaction = await Transaction.findOne({
                     _id: metadata.transactionId,
                     isPaid: false,
@@ -73,13 +91,13 @@ export const stripeWebhooks = async (
                     });
                 }
 
-                // Increment user credits
+                // Add purchased credits to user
                 await User.updateOne(
                     { _id: transaction.userId },
                     { $inc: { credits: transaction.credits } }
                 );
 
-                // Mark transaction as paid
+                // Mark transaction as completed
                 transaction.isPaid = true;
                 await transaction.save();
 
@@ -87,6 +105,7 @@ export const stripeWebhooks = async (
             }
 
             default:
+                // Log unhandled Stripe events
                 console.log(`Unhandled event type ${event.type}`);
                 break;
         }

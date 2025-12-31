@@ -7,16 +7,26 @@ import Chat from "../models/Chat.js";
 
 /* ------------------ TYPES ------------------ */
 
+/**
+ * Extended request type used for protected routes
+ * User is injected by auth middleware
+ */
 interface AuthRequest extends Request {
     user?: unknown;
 }
 
+/**
+ * Request body for user registration
+ */
 interface RegisterBody {
     name: string;
     email: string;
     password: string;
 }
 
+/**
+ * Request body for user login
+ */
 interface LoginBody {
     email: string;
     password: string;
@@ -24,7 +34,10 @@ interface LoginBody {
 
 /* ------------------ HELPERS ------------------ */
 
-// generate JWT token
+/**
+ * Generates a signed JWT token for authentication
+ * @param id MongoDB user ID
+ */
 const generateToken = (id: string): string => {
     return jwt.sign({ id }, process.env.JWT_SECRET as string, {
         expiresIn: "30d",
@@ -33,7 +46,13 @@ const generateToken = (id: string): string => {
 
 /* ------------------ CONTROLLERS ------------------ */
 
-// API to register a new user
+/* -------- REGISTER USER -------- */
+/**
+ * Registers a new user
+ * - Prevents duplicate email registration
+ * - Password hashing handled by User model middleware
+ * - Returns JWT token on success
+ */
 export const registerUser = async (
     req: Request<{}, {}, RegisterBody>,
     res: Response
@@ -41,6 +60,7 @@ export const registerUser = async (
     const { name, email, password } = req.body;
 
     try {
+        // Check if user already exists
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res
@@ -48,14 +68,17 @@ export const registerUser = async (
                 .json({ success: false, message: "User already exists" });
         }
 
+        // Create new user
         const user = await User.create({ name, email, password });
+
+        // Generate auth token
         const token = generateToken(user._id.toString());
 
         return res.status(201).json({
             success: true,
             token,
         });
-    } catch (error) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server Error",
@@ -63,7 +86,13 @@ export const registerUser = async (
     }
 };
 
-// API to login a user
+/* -------- LOGIN USER -------- */
+/**
+ * Authenticates user credentials
+ * - Verifies email exists
+ * - Compares hashed password
+ * - Returns JWT token on success
+ */
 export const loginUser = async (
     req: Request<{}, {}, LoginBody>,
     res: Response
@@ -72,8 +101,10 @@ export const loginUser = async (
 
     try {
         const user = await User.findOne({ email });
+
         if (user) {
             const isMatch = await bcrypt.compare(password, user.password);
+
             if (isMatch) {
                 const token = generateToken(user._id.toString());
                 return res.status(200).json({
@@ -83,11 +114,12 @@ export const loginUser = async (
             }
         }
 
+        // Invalid credentials fallback
         return res.status(200).json({
             success: false,
             message: "Invalid email or password",
         });
-    } catch (error) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server Error",
@@ -95,7 +127,12 @@ export const loginUser = async (
     }
 };
 
-// API to get user data
+/* -------- GET USER DATA -------- */
+/**
+ * Returns authenticated user profile
+ * - Requires valid JWT
+ * - User is attached by protect middleware
+ */
 export const getUserData = async (
     req: AuthRequest,
     res: Response
@@ -105,7 +142,7 @@ export const getUserData = async (
             success: true,
             user: req.user,
         });
-    } catch (error) {
+    } catch {
         return res.status(500).json({
             success: false,
             message: "Server Error",
@@ -113,9 +150,15 @@ export const getUserData = async (
     }
 };
 
-// API to get published images
+/* -------- GET PUBLISHED IMAGES -------- */
+/**
+ * Fetches all publicly shared AI-generated images
+ * - Aggregates from chat messages
+ * - Filters image + published flags
+ * - Used for Community page
+ */
 export const getPublishedImages = async (
-    req: Request,
+    _req: Request,
     res: Response
 ): Promise<Response> => {
     try {

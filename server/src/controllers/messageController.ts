@@ -7,7 +7,11 @@ import imagekit from "../configs/imageKit.js";
 import openai from "../configs/openai.js";
 
 /* ------------------ TEXT MESSAGE ------------------ */
-
+/**
+ * Handles AI text generation
+ * - Deducts 1 credit per request
+ * - Stores user and assistant messages
+ */
 export const textMessageController = async (
     req: AuthRequest,
     res: Response
@@ -16,6 +20,7 @@ export const textMessageController = async (
         const user = req.user as any;
         const userId = user._id;
 
+        // Check available credits
         if (user.credits < 1) {
             return res
                 .status(200)
@@ -27,6 +32,7 @@ export const textMessageController = async (
             prompt: string;
         };
 
+        // Validate chat ownership
         const chat = await Chat.findOne({ _id: chatId, userId });
         if (!chat) {
             return res
@@ -34,6 +40,7 @@ export const textMessageController = async (
                 .json({ success: false, message: "Chat not found" });
         }
 
+        // Save user message
         chat.messages.push({
             role: "user",
             content: prompt,
@@ -42,14 +49,10 @@ export const textMessageController = async (
             isPublished: false,
         });
 
+        // Generate AI response
         const { choices } = await openai.chat.completions.create({
             model: "gemini-2.5-flash",
-            messages: [
-                {
-                    role: "user",
-                    content: prompt,
-                },
-            ],
+            messages: [{ role: "user", content: prompt }],
         });
 
         const reply = {
@@ -59,11 +62,12 @@ export const textMessageController = async (
             isPublished: false,
         };
 
+        // Send response immediately
         res.status(200).json({ success: true, reply });
 
+        // Persist assistant message and deduct credits
         chat.messages.push(reply as any);
         await chat.save();
-
         await User.updateOne({ _id: userId }, { $inc: { credits: -1 } });
 
         return res;
@@ -75,7 +79,12 @@ export const textMessageController = async (
 };
 
 /* ------------------ IMAGE MESSAGE ------------------ */
-
+/**
+ * Handles AI image generation
+ * - Deducts 2 credits
+ * - Uploads generated image to ImageKit
+ * - Optionally publishes image to community
+ */
 export const imageMessageController = async (
     req: AuthRequest,
     res: Response
@@ -84,6 +93,7 @@ export const imageMessageController = async (
         const user = req.user as any;
         const userId = user._id;
 
+        // Check credits for image generation
         if (user.credits < 2) {
             return res
                 .status(200)
@@ -96,6 +106,7 @@ export const imageMessageController = async (
             isPublished: boolean;
         };
 
+        // Validate chat ownership
         const chat = await Chat.findOne({ _id: chatId, userId });
         if (!chat) {
             return res
@@ -103,6 +114,7 @@ export const imageMessageController = async (
                 .json({ success: false, message: "Chat not found" });
         }
 
+        // Store user prompt
         chat.messages.push({
             role: "user",
             content: prompt,
@@ -111,18 +123,22 @@ export const imageMessageController = async (
             isPublished: false,
         });
 
+        // Generate image via ImageKit prompt endpoint
         const encodedPrompt = encodeURIComponent(prompt);
-        const generatedImageUrl = `${process.env.IMAGEKIT_URL_ENDPOINT}/ik-genimg-prompt-${encodedPrompt}/intellichat/${Date.now()}.png?tr=w=800,h-800`;
+        const generatedImageUrl =
+            `${process.env.IMAGEKIT_URL_ENDPOINT}/ik-genimg-prompt-${encodedPrompt}/intellichat/${Date.now()}.png?tr=w=800,h-800`;
 
         const aiImageResponse = await axios.get<ArrayBuffer>(
             generatedImageUrl,
             { responseType: "arraybuffer" }
         );
 
+        // Convert image to base64 for upload
         const base64Image = `data:image/png;base64,${Buffer.from(
             aiImageResponse.data
         ).toString("base64")}`;
 
+        // Upload image to ImageKit
         const uploadResponse = await imagekit.upload({
             file: base64Image,
             fileName: `${Date.now()}.png`,
@@ -137,11 +153,12 @@ export const imageMessageController = async (
             isPublished,
         };
 
+        // Respond to client
         res.status(200).json({ success: true, reply });
 
+        // Persist image message and deduct credits
         chat.messages.push(reply as any);
         await chat.save();
-
         await User.updateOne({ _id: userId }, { $inc: { credits: -2 } });
 
         return res;
