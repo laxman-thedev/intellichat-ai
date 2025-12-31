@@ -4,7 +4,10 @@ import Transaction from "../models/Transaction.js";
 import type { AuthRequest } from "../middlewares/auth.js";
 
 /* ------------------ PLANS ------------------ */
-
+/**
+ * Static credit plans offered by the application
+ * Used for Stripe checkout and credit allocation
+ */
 const plans = [
     {
         _id: "basic",
@@ -47,7 +50,9 @@ const plans = [
 ];
 
 /* ------------------ GET PLANS ------------------ */
-
+/**
+ * Returns available credit plans
+ */
 export const getPlans = async (
     _req: Request,
     res: Response
@@ -62,11 +67,17 @@ export const getPlans = async (
 };
 
 /* ------------------ STRIPE ------------------ */
-
+/**
+ * Stripe instance initialized with secret key
+ */
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 /* ------------------ PURCHASE PLAN ------------------ */
-
+/**
+ * Creates Stripe checkout session for selected plan
+ * - Stores transaction before payment
+ * - Credits added later via webhook
+ */
 export const purchasePlan = async (
     req: AuthRequest,
     res: Response
@@ -75,6 +86,7 @@ export const purchasePlan = async (
         const { planId } = req.body as { planId: string };
         const userId = (req.user as any)._id;
 
+        // Validate plan selection
         const plan = plans.find((p) => p._id === planId);
         if (!plan) {
             return res
@@ -82,7 +94,7 @@ export const purchasePlan = async (
                 .json({ success: false, message: "Plan not found" });
         }
 
-        // Create transaction
+        // Store pending transaction
         const transaction = await Transaction.create({
             userId,
             planId: plan._id,
@@ -93,6 +105,7 @@ export const purchasePlan = async (
 
         const origin = req.headers.origin as string;
 
+        // Create Stripe checkout session
         const session = await stripe.checkout.sessions.create({
             line_items: [
                 {
