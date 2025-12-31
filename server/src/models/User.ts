@@ -3,6 +3,9 @@ import bcrypt from "bcryptjs";
 
 /* ------------------ TYPES ------------------ */
 
+/**
+ * User document structure
+ */
 export interface IUser extends Document {
     name: string;
     email: string;
@@ -13,6 +16,9 @@ export interface IUser extends Document {
 
 /* ------------------ SCHEMA ------------------ */
 
+/**
+ * User schema for authentication & credits system
+ */
 const userSchema = new Schema<IUser>(
     {
         name: {
@@ -33,13 +39,18 @@ const userSchema = new Schema<IUser>(
         },
         credits: {
             type: Number,
-            default: 20,
+            default: 20, // free credits on signup
         },
     },
     { timestamps: true }
 );
 
 /* ------------------ MIDDLEWARE ------------------ */
+
+/**
+ * Hash password before saving user
+ * Runs only when password is modified
+ */
 userSchema.pre<IUser>("save", async function () {
     if (!this.isModified("password")) {
         return;
@@ -51,6 +62,9 @@ userSchema.pre<IUser>("save", async function () {
 
 /* ------------------ METHODS ------------------ */
 
+/**
+ * Compare entered password with hashed password
+ */
 userSchema.methods.comparePassword = async function (
     this: IUser,
     enteredPassword: string
@@ -60,6 +74,10 @@ userSchema.methods.comparePassword = async function (
 
 /* ------------------ MODEL ------------------ */
 
+/**
+ * User model
+ * Reuses existing model to avoid recompilation issues
+ */
 const User: Model<IUser> =
     mongoose.models.User || mongoose.model<IUser>("User", userSchema);
 
