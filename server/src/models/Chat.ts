@@ -2,23 +2,34 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 /* ------------------ TYPES ------------------ */
 
+/**
+ * Represents a single message inside a chat
+ * Can be either a text message or an image
+ */
 export interface IMessage {
-    isImage: boolean;
-    isPublished: boolean;
-    role: "user" | "assistant";
-    content: string;
-    timestamp: number;
+    isImage: boolean;          // true if message is an image URL
+    isPublished: boolean;      // whether image is published to community
+    role: "user" | "assistant"; // sender role
+    content: string;           // text content OR image URL
+    timestamp: number;         // message creation time
 }
 
+/**
+ * Chat document structure
+ */
 export interface IChat extends Document {
-    userId: string;
-    userName: string;
-    name: string;
-    messages: IMessage[];
+    userId: string;            // owner of the chat
+    userName: string;          // username (used for community images)
+    name: string;              // chat title
+    messages: IMessage[];      // list of messages in chat
 }
 
 /* ------------------ SCHEMA ------------------ */
 
+/**
+ * Schema for individual messages
+ * Embedded inside Chat documents
+ */
 const messageSchema = new Schema<IMessage>(
     {
         isImage: { type: Boolean, required: true },
@@ -31,9 +42,12 @@ const messageSchema = new Schema<IMessage>(
         content: { type: String, required: true },
         timestamp: { type: Number, required: true },
     },
-    { _id: false }
+    { _id: false } // Prevents MongoDB from creating _id for each message
 );
 
+/**
+ * Schema for chat documents
+ */
 const chatSchema = new Schema<IChat>(
     {
         userId: {
@@ -51,11 +65,15 @@ const chatSchema = new Schema<IChat>(
         },
         messages: [messageSchema],
     },
-    { timestamps: true }
+    { timestamps: true } // Automatically adds createdAt & updatedAt
 );
 
 /* ------------------ MODEL ------------------ */
 
+/**
+ * Chat model
+ * Reuses existing model if already compiled (important for dev/hot reload)
+ */
 const Chat: Model<IChat> =
     mongoose.models.Chat || mongoose.model<IChat>("Chat", chatSchema);
 
