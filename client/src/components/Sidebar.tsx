@@ -146,7 +146,7 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
             <img
                 src={theme === "dark" ? assets.logo_full : assets.logo_full_dark}
                 alt="logo"
-                className="w-full max-w-48"
+                className="w-full max-w-60"
             />
 
             {/* Create new chat */}
