@@ -298,6 +298,8 @@ const Sidebar: FC<SidebarProps> = ({ isMenuOpen, setIsMenuOpen }) => {
                 )}
             </div>
 
+            <p className="mt-3 text-center text-[12px]">Copyright © 2026 <a href="https://laxman-thedev.vercel.app" className='underline' >Laxman</a> IntelliChat</p>
+
             {/* Mobile close button */}
             <img
                 src={assets.close_icon}
