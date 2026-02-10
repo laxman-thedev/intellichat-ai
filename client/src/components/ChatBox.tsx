@@ -32,6 +32,7 @@ const ChatBox = () => {
         axios,        // preconfigured axios instance
         token,        // JWT auth token
         setUser,      // update user state (credits)
+        fetchUsersChats, // refresh chat list
     } = useAppContext();
 
     /**
@@ -62,10 +63,30 @@ const ChatBox = () => {
             return;
         }
 
-        // Ensure a chat is selected
-        if (!selectedChat) {
-            toast.error("No chat selected");
-            return;
+        let chatId = selectedChat?._id;
+
+        // If no chat is selected, create one on the server first
+        if (!chatId) {
+            try {
+                const { data: chatData } = await axios.get(
+                    "/api/chat/create",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+
+                if (chatData.success && chatData.chat) {
+                    chatId = chatData.chat._id;
+                } else {
+                    toast.error("Failed to create chat");
+                    return;
+                }
+            } catch {
+                toast.error("Failed to create chat");
+                return;
+            }
         }
 
         try {
@@ -95,7 +116,7 @@ const ChatBox = () => {
             const { data } = await axios.post(
                 `/api/message/${mode}`,
                 {
-                    chatId: selectedChat._id,
+                    chatId,
                     prompt: promptCopy,
                     isPublished,
                 },
@@ -123,6 +144,11 @@ const ChatBox = () => {
                                 : prev.credits - 1,
                     };
                 });
+
+                // If this was a new chat, refresh the chat list
+                if (!selectedChat) {
+                    await fetchUsersChats();
+                }
             } else {
                 toast.error(data.message);
                 setPrompt(promptCopy);
@@ -142,11 +168,14 @@ const ChatBox = () => {
     /* ------------------ EFFECTS ------------------ */
 
     /**
-     * Sync messages when selected chat changes
+     * Sync messages when selected chat changes.
+     * Clear messages when no chat is selected (new chat mode).
      */
     useEffect(() => {
         if (selectedChat) {
             setMessages(selectedChat.messages);
+        } else {
+            setMessages([]);
         }
     }, [selectedChat]);
 

@@ -17,7 +17,7 @@ export const createChat = async (
         const user = req.user as any;
 
         // Create a new chat document
-        await Chat.create({
+        const chat = await Chat.create({
             userId: user._id.toString(),
             userName: user.name,
             name: "New Chat",
@@ -26,7 +26,7 @@ export const createChat = async (
 
         return res
             .status(201)
-            .json({ success: true, message: "Chat created" });
+            .json({ success: true, message: "Chat created", chat });
     } catch (error: any) {
         return res
             .status(500)

@@ -112,33 +112,18 @@ export const AppContextProvider = ({
 
     /**
      * Create a new empty chat for the logged-in user.
-     * Redirects user to home page after creation.
+     * Only resets UI state — the actual chat is created
+     * on the server when the first message is sent.
      */
     const createNewChat = async (): Promise<void> => {
-        try {
-            if (!user) {
-                toast("Login to create a new chat");
-                return;
-            }
-
-            // Ensure user is on chat screen
-            navigate("/");
-
-            await axios.get("/api/chat/create", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
-            // Refresh chat list after creation
-            await fetchUsersChats();
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                toast.error(error.message);
-            } else {
-                toast.error("Failed to create chat");
-            }
+        if (!user) {
+            toast("Login to create a new chat");
+            return;
         }
+
+        // Reset to new-chat state without creating in database
+        navigate("/");
+        setSelectedChat(null);
     };
 
     /**
@@ -156,12 +141,10 @@ export const AppContextProvider = ({
             if (data.success) {
                 setChats(data.chats);
 
-                // If no chats exist, create one automatically
-                if (data.chats.length === 0) {
-                    await createNewChat();
-                    return fetchUsersChats();
-                } else {
+                if (data.chats.length > 0) {
                     setSelectedChat(data.chats[0]);
+                } else {
+                    setSelectedChat(null);
                 }
             } else {
                 toast.error(data.message);
