@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 
 import { assets } from "./assets/assets";
 import { useAppContext } from "./context/AppContext";
+import NotFound from "./pages/NotFound";
 
 const App = () => {
   // Controls mobile sidebar visibility
@@ -62,6 +63,8 @@ const App = () => {
               <Route path="/credits" element={<Credits />} />
               <Route path="/community" element={<Community />} />
               <Route path="/loading" element={<Loading />} />
+
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
         </div>
