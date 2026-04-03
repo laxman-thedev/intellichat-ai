@@ -1,34 +1,78 @@
 /* Import Google Font used across the app */
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
 
-/* Import Tailwind CSS base styles */
+/* Import Tailwind CSS */
 @import "tailwindcss";
 
-/* Custom dark mode variant for Tailwind */
+/* Custom dark mode variant */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Apply global font */
+/* Global font */
 * {
   font-family: "Outfit", sans-serif;
+  box-sizing: border-box;
 }
 
-/* Define theme-level CSS variables */
+/* Theme color */
 @theme {
   --color-primary: "#E6CCFf";
 }
 
-/* Hide scrollbar for cleaner UI */
+/* Prevent horizontal page scroll */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* =====================================
+   Markdown / Code Block Fix (FINAL)
+   ===================================== */
+
+/* Prism code container */
+pre[class*="language-"] {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre;
+  box-sizing: border-box;
+}
+
+/* IMPORTANT: prevent width expansion */
+pre[class*="language-"],
+code[class*="language-"] {
+  min-width: 0 !important;
+  max-width: 100%;
+}
+
+/* Code inside block */
+pre[class*="language-"] code {
+  display: block;
+  white-space: pre;
+}
+
+/* Inline code wrapping */
+:not(pre) > code {
+  white-space: break-spaces;
+  word-break: break-word;
+}
+
+/* =====================================
+   UI Helpers
+   ===================================== */
+
+/* Hide scrollbars for clean UI */
 ::-webkit-scrollbar {
   display: none;
 }
 
-/* Reset Tailwind styles for markdown content
-   (used when rendering AI responses with code blocks) */
+/* Reset Tailwind styles inside markdown */
 .reset-tw :not(pre):not(code) {
   all: revert;
 }
 
-/* Loader animation delays for typing indicator */
+/* Loader animation delays */
 .loader div:nth-child(2) {
   animation-delay: 0.2s;
 }
