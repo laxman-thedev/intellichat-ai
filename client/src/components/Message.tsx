@@ -16,65 +16,62 @@ interface MessageProps {
 /**
  * Message component
  * -----------------
- * Responsible for rendering a single chat message.
- * Supports:
+ * Renders:
  * - User messages
- * - Assistant text responses (Markdown + syntax highlighting)
- * - Assistant image responses
+ * - Assistant text (Markdown + Prism)
+ * - Assistant images
+ *
+ * Mobile Fix:
+ * - Prevents horizontal overflow
+ * - Code blocks scroll inside container only
  */
 const Message = ({ message }: MessageProps) => {
-
-    /**
-     * Re-run Prism syntax highlighting
-     * whenever message content changes.
-     * This is required for code blocks inside Markdown.
-     */
     useEffect(() => {
         Prism.highlightAll();
     }, [message.content]);
 
     return (
-        <div>
-            {/* User message */}
+        <div className="w-full overflow-hidden">
             {message.role === "user" ? (
-                <div className="flex items-start justify-end my-4 gap-2">
-                    <div className="flex flex-col gap-2 p-2 px-4 bg-slate-50 dark:bg-[#57317C]/30 border border-[#80609F]/30 rounded-md max-w-2xl">
-                        <p className="text-sm dark:text-primary">
+                /* ---------------- USER MESSAGE ---------------- */
+                <div className="flex items-start justify-end my-4 gap-2 w-full">
+                    <div className="flex flex-col gap-2 p-2 px-4 bg-slate-50 dark:bg-[#57317C]/30 border border-[#80609F]/30 rounded-md max-w-[85%] break-words">
+                        <p className="text-sm dark:text-primary break-words">
                             {message.content}
                         </p>
 
-                        {/* Timestamp */}
                         <span className="text-xs text-gray-400 dark:text-[#B1ACC0]">
                             {moment(message.timestamp).fromNow()}
                         </span>
                     </div>
 
-                    {/* User avatar */}
                     <img
-                        className="w-8 rounded-full"
+                        className="w-8 rounded-full shrink-0"
                         src={assets.user_icon}
                         alt="icon"
                     />
                 </div>
             ) : (
-                /* Assistant message */
-                <div className="inline-flex flex-col gap-2 p-2 px-4 max-w-2xl bg-primary/20 dark:bg-[#57317C]/30 border border-[#80609F]/30 rounded-md my-4">
+                /* ---------------- ASSISTANT MESSAGE ---------------- */
+                <div className="w-full max-w-full md:max-w-2xl flex flex-col gap-2 p-2 px-4 bg-primary/20 dark:bg-[#57317C]/30 border border-[#80609F]/30 rounded-md my-4 overflow-hidden">
 
                     {/* Image response */}
                     {message.isImage ? (
                         <img
-                            className="w-full max-w-md mt-2 rounded-md"
+                            className="w-full max-w-md rounded-md"
                             src={message.content}
                             alt="generated"
                         />
                     ) : (
-                        /* Text response (Markdown supported) */
-                        <div className="text-xs dark:text-primary reset-tw">
-                            <Markdown>{message.content}</Markdown>
+                        /* Text response */
+                        <div className="text-xs dark:text-primary reset-tw w-full overflow-hidden">
+                            {/* Scroll only inside code blocks */}
+                            <div className="w-full overflow-x-auto">
+                                <Markdown>{message.content}</Markdown>
+                            </div>
                         </div>
                     )}
 
-                    {/* Timestamp */}
                     <span className="text-xs text-gray-400 dark:text-[#B1A6C0]">
                         {moment(message.timestamp).fromNow()}
                     </span>

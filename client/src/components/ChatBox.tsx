@@ -194,9 +194,12 @@ const ChatBox = () => {
     /* ------------------ UI ------------------ */
 
     return (
-        <div className="flex-1 flex flex-col justify-between m-5 md:m-10 xl:mx-30 max-md:mt-14 2xl:pr-40 overflow-y-scroll">
+        <div className="flex-1 flex flex-col justify-between w-full max-w-full overflow-hidden m-5 md:m-10 xl:mx-30 max-md:mt-14 2xl:pr-40">
             {/* Messages */}
-            <div ref={containerRef} className="flex-1 mb-5 overflow-y-scroll">
+            <div
+                ref={containerRef}
+                className="flex-1 mb-5 overflow-y-auto overflow-x-hidden w-full"
+            >
                 {messages.length === 0 && (
                     <div className="h-full flex flex-col items-center justify-center gap-2 text-primary">
                         <img
@@ -214,13 +217,12 @@ const ChatBox = () => {
                     </div>
                 )}
 
-                {/* Render chat messages */}
                 {messages.map((message, index) => (
                     <Message key={index} message={message} />
                 ))}
             </div>
 
-            {/* Loading animation */}
+            {/* Loading */}
             {loading && (
                 <div className="loader flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-gray-500 dark:bg-white animate-bounce"></div>
@@ -229,7 +231,7 @@ const ChatBox = () => {
                 </div>
             )}
 
-            {/* Image publish toggle (only for image mode) */}
+            {/* Image publish toggle */}
             {mode === "image" && (
                 <label className="inline-flex items-center gap-2 mb-3 text-sm mx-auto">
                     <p className="text-xs">
@@ -244,12 +246,11 @@ const ChatBox = () => {
                 </label>
             )}
 
-            {/* Prompt input */}
+            {/* Input */}
             <form
                 onSubmit={handleSubmit}
                 className="bg-primary/20 dark:bg-[#583C79]/30 border border-primary dark:border-[#80609F]/30 rounded-full w-full max-w-2xl p-3 pl-4 mx-auto flex gap-4 items-center"
             >
-                {/* Mode selector */}
                 <select
                     value={mode}
                     onChange={(e) => setMode(e.target.value as Mode)}
@@ -263,7 +264,6 @@ const ChatBox = () => {
                     </option>
                 </select>
 
-                {/* Prompt input */}
                 <input
                     type="text"
                     value={prompt}
@@ -273,7 +273,6 @@ const ChatBox = () => {
                     required
                 />
 
-                {/* Send button */}
                 <button disabled={loading}>
                     <img
                         className="w-8 cursor-pointer"
@@ -284,6 +283,7 @@ const ChatBox = () => {
             </form>
         </div>
     );
+
 };
 
 export default ChatBox;

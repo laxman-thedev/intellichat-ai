@@ -61,9 +61,7 @@ export const protect = async (
 
         // If user does not exist
         if (!user) {
-            return res
-                .status(401)
-                .json({ success: false, message: "Not authorized, user not found" });
+            return res.json({ success: false, message: "Not authorized, user not found" });
         }
 
         // Attach authenticated user to request object
@@ -73,8 +71,6 @@ export const protect = async (
         next();
     } catch (error) {
         // Token invalid, expired, or malformed
-        return res
-            .status(401)
-            .json({ success: false, message: "Not authorized, token failed" });
+        return res.json({ success: false, message: "Not authorized, token failed" });
     }
 };
